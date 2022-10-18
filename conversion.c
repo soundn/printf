@@ -1,86 +1,98 @@
-#include <stdarg.h>
+#include <stdlib.h>
 #include "main.h"
-#include <stddef.h>
-
 /**
- * get_op - select function for conversion char
- * @c: char to check
- * Return: pointer to function
+ * convert_alpha_numeric - convert digits to char
+ * @nb: digit or number
+ * @upper: upper case check
+ * Return: converted value
  */
 
-int (*get_op(const char c))(va_list)
+int convert_alpha_numeric(int nb, int upper)
 {
-	int i = 0;
-
-	flags_p fp[] = {
-		{"c", print_char},
-		{"s", print_str},
-		{"i", print_nbr},
-		{"d", print_nbr},
-		{"b", print_binary},
-		{"o", print_octal},
-		{"x", print_hexa_lower},
-		{"X", print_hexa_upper},
-		{"u", print_unsigned},
-		{"S", print_str_unprintable},
-		{"r", print_str_reverse},
-		{"p", print_ptr},
-		{"R", print_rot13},
-		{"%", print_percent}
-	};
-	while (i < 14)
-	{
-		if (c == fp[i].c[0])
-		{
-			return (fp[i].f);
-		}
-		i++;
-	}
-	return (NULL);
+	if (nb >= 10)
+		return (nb - 10 + ((upper) ? 'A' : 'a'));
+	else
+		return (nb + '0');
 }
 
 /**
- * _printf - Reproduce behavior of printf function
- * @format: format string
- * Return: value of printed chars
+ * convert_base - convert unsigned from base 10 to base
+ * @nb: decimal number
+ * @base: base to convert from
+ * @upper: upper case check
+ * Return: converted number to string
  */
 
-int _printf(const char *format, ...)
+char *convert_base(unsigned long nb, unsigned int base, int upper)
 {
-	va_list ap;
-	int sum = 0, i = 0;
-	int (*func)();
+	int i = 0;
+	char *str;
+	unsigned long nbr = nb;
 
-	if (!format || (format[0] == '%' && format[1] == '\0'))
-		return (-1);
-	va_start(ap, format);
-
-	while (format[i])
+	while (nbr >= base)
 	{
-		if (format[i] == '%')
-		{
-			if (format[i + 1] != '\0')
-				func = get_op(format[i + 1]);
-			if (func == NULL)
-			{
-				_putchar(format[i]);
-				sum++;
-				i++;
-			}
-			else
-			{
-				sum += func(ap);
-				i += 2;
-				continue;
-			}
-		}
-		else
-		{
-			_putchar(format[i]);
-			sum++;
-			i++;
-		}
+		nbr /= base;
+		i++;
 	}
-	va_end(ap);
-	return (sum);
+	str = malloc(sizeof(char) * i + 2);
+	if (!str)
+		return (0);
+	str[i + 1] = '\0';
+
+	while (i >= 0)
+	{
+		nbr = nb % base;
+		str[i] = convert_alpha_numeric(nbr, upper);
+		nb /= base;
+		i--;
+	}
+	return (str);
+}
+
+/**
+ * convert_base_pointer - convert pointer void to ul
+ * @p: pointer
+ * Return: converted string
+ */
+
+char *convert_base_pointer(unsigned long p)
+{
+	unsigned long adress;
+	char *str;
+
+	adress = p;
+	if (adress == 0)
+		return ("0");
+	str = convert_base(adress, 16, 0);
+	return (str);
+}
+/**
+ * convert_rot13 - encode using rot13
+ * @str: string to encode
+ * Return: encoded string
+ */
+
+char *convert_rot13(char *str)
+{
+	int i = 0;
+	char *s;
+	int size = _strlen_recursion(str);
+
+	s = malloc(sizeof(char) * size + 1);
+	if (!s)
+		return (0);
+
+	while (str[i])
+	{
+		if ((str[i] >= 'a' && str[i] <= 'm') || (str[i] >= 'A' && str[i] <= 'M'))
+			s[i] = str[i] + 13;
+		else if ((str[i] >= 'n' && str[i] <= 'z')
+				|| (str[i] >= 'N' && str[i] <= 'Z'))
+			s[i] = str[i] - 13;
+		else
+			s[i] = str[i];
+		i++;
+	}
+	s[i] = '\0';
+	return (s);
 }
